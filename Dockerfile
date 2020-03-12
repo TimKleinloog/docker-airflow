@@ -25,6 +25,9 @@ ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
 ENV LC_MESSAGES en_US.UTF-8
 
+# DB Drivers
+ENV LD_LIBRARY_PATH=/instantclient_19_3:$LD_LIBRARY_PATH
+
 # Disable noisy "Handling signal" log messages:
 # ENV GUNICORN_CMD_ARGS --log-level WARNING
 
@@ -72,6 +75,27 @@ RUN set -ex \
         /usr/share/man \
         /usr/share/doc \
         /usr/share/doc-base
+
+# DB drivers
+# MS
+RUN set -ex \
+    && dbDriverDeps=' \ 
+        wget \
+        unzip \
+        apt-transport-https \
+        gnupg \
+        unixodbc-dev \
+        libaio1 \
+    ' \
+    && apt-get install -yqq --no-install-recommends \
+        $dbDriverDeps \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list \ 
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install --yes --no-install-recommends msodbcsql17 \    
+# Oracle
+RUN wget https://download.oracle.com/otn_software/linux/instantclient/193000/instantclient-basiclite-linux.x64-19.3.0.0.0dbru.zip
+RUN unzip instantclient-basiclite-linux.x64-19.3.0.0.0dbru.zip
 
 COPY script/entrypoint.sh /entrypoint.sh
 COPY config/airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
